@@ -1,0 +1,27 @@
+
+name: "Setup JFrog CLI Example"
+on:
+  push:
+    tags:
+      - v*
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup JFrog CLI
+        uses: jfrog/setup-jfrog-cli@v4
+        env:
+          # JFrog platform url (for example: https://acme.jfrog.io)
+          JF_URL: https://hts2.jfrog.io
+
+          # Basic authentication credentials
+          JF_USER: manojm
+          JF_PASSWORD: Password@123
+
+      - name: Run JFrog CLI
+        run: |
+          # Ping the server
+          jf rt ping
