@@ -1,27 +1,46 @@
+name: Setup JFrog CLI with OIDC
 
-name: "Setup JFrog CLI Example"
-on:
+on: 
   push:
     tags:
-      - v*
+      - "v*" # This triggers the workflow on tags that start with 'v'
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Setup JFrog CLI
         uses: jfrog/setup-jfrog-cli@v4
-        env:
-          # JFrog platform url (for example: https://acme.jfrog.io)
-          JF_URL: https://hts2.jfrog.io
+        with:
+          version: '2.73.0' # Adjust the version as needed
 
-          # Basic authentication credentials
-          JF_USER: manojm
-          JF_PASSWORD: Password@123
+      - name: Configure JFrog CLI with OIDC
+        id: configure-jfrog-cli
+        env:
+          JFROG_URL: https://hts2.jfrog.io
+        run: |
+          echo "Configuring JFrog CLI with OIDC..."
+
+          # Request the GitHub OIDC token
+          echo "Requesting GitHub OIDC token..."
+          TOKEN=$(curl -H "Authorization: bearer ${{ secrets.GITHUB_TOKEN }}" \
+                      https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/tokens | jq -r '.token')
+
+          # Configure JFrog CLI with the OIDC token
+          jfrog rt config add my-artifactory \
+              --url=$JFROG_URL \
+              --access-token=$TOKEN \
+              --interactive=false
 
       - name: Run JFrog CLI
         run: |
-          # Ping the server
+          # Ping the server to check the connection
           jf rt ping
